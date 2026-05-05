@@ -1,0 +1,65 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # also allow manual trigger from GitHub UI
+
+permissions:
+  id-token: write   # needed for OIDC
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Verify AWS auth
+        run: aws sts get-caller-identity
+
+      - name: Redeploy predict Lambda (data capture version)
+        env:
+          PROJECT_BUCKET: ${{ vars.PROJECT_BUCKET }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          SAGEMAKER_ROLE_ARN: ${{ vars.SAGEMAKER_ROLE_ARN }}
+        run: python src/monitoring/redeploy_lambda.py
+
+      - name: Redeploy drift detector Lambda
+        env:
+          PROJECT_BUCKET: ${{ vars.PROJECT_BUCKET }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+        run: python src/monitoring/deploy_drift_detector.py
+
+      - name: Smoke test public API
+        env:
+          API_URL: ${{ vars.API_URL }}
+          API_KEY: ${{ secrets.API_KEY }}
+        run: |
+          if [ -n "$API_URL" ] && [ -n "$API_KEY" ]; then
+            curl -sf -X POST "$API_URL" \
+              -H "x-api-key: $API_KEY" \
+              -H "Content-Type: application/json" \
+              -d '{"features": [0.0, -1.36, -0.07, 2.54, 1.38, -0.34, 0.46, 0.24, 0.10, 0.36, 0.09, -0.55, -0.62, -0.99, -0.31, 1.47, -0.47, 0.21, 0.03, 0.40, 0.25, -0.02, 0.28, -0.11, 0.07, 0.13, -0.19, 0.13, -0.02, 149.62, 5.01, 0.24, 0, 0]}' \
+              | grep -q "fraud_probability"
+            echo "Smoke test passed"
+          else
+            echo "API_URL/API_KEY not set; skipping smoke test"
+          fi
