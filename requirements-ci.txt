@@ -1,0 +1,6 @@
+boto3>=1.34
+python-dotenv>=1.0
+pandas>=2.0
+pyarrow>=14
+pytest>=7.0
+ruff>=0.1

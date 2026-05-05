@@ -22,7 +22,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install ruff black pytest
           # Only install runtime deps if requirements.txt exists and works
-          pip install -r requirements.txt || echo "Skipping requirements.txt (let lint/test pass)"
+          pip install -r requirements-ci.txt
 
       - name: Lint with ruff
         run: ruff check src/ || true
