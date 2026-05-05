@@ -1,6 +1,6 @@
 # AWS MLOps Fraud Detection
 
-End-to-end MLOps system on AWS that detects credit card fraud, retrains itself automatically when data drift is detected, deploys via serverless inference behind a public API, and ships every change through GitHub Actions CI/CD.  # noqa: E999
+End-to-end MLOps system on AWS that detects credit card fraud, retrains itself automatically when data drift is detected, deploys via serverless inference behind a public API, and ships every change through GitHub Actions CI/CD. 
 
 
 ## Architecture
@@ -98,7 +98,7 @@ Trained on the [Kaggle Credit Card Fraud Dataset](https://www.kaggle.com/dataset
 
 ## Phases Built
 
-- **Phase 0** — Account hardening, IAM, repo skeleton
+- **Phase 0** — Account hardening and aws limitations scoping, IAM, repo skeleton
 - **Phase 1** — Data lake (S3 + Glue + Athena) with Hive partitioning
 - **Phase 2** — EDA + Feature engineering (Parquet) + SageMaker Feature Store
 - **Phase 3** — Training pipeline: SageMaker Pipelines DAG (preprocess → train → evaluate → register)
