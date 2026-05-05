@@ -56,6 +56,8 @@ aws iam attach-role-policy --role-name "$ROLE_NAME" --policy-arn arn:aws:iam::aw
 aws iam attach-role-policy --role-name "$ROLE_NAME" --policy-arn arn:aws:iam::aws:policy/IAMFullAccess
 aws iam attach-role-policy --role-name "$ROLE_NAME" --policy-arn arn:aws:iam::aws:policy/AWSLambda_FullAccess
 aws iam attach-role-policy --role-name "$ROLE_NAME" --policy-arn arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator
+# Add this line near the other attach-role-policy commands
+aws iam attach-role-policy --role-name "$ROLE_NAME" --policy-arn arn:aws:iam::aws:policy/AmazonEventBridgeFullAccess
 
 echo ""
 echo "============================================"
