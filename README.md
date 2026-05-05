@@ -7,42 +7,57 @@ End-to-end MLOps system on AWS that detects credit card fraud, retrains itself a
 
 ```mermaid
 flowchart TD
-    GH[GitHub Repo]:::ci -->|git push to main| GA[GitHub Actions<br/>OIDC + Lint + Tests + Deploy]:::ci
-    GA -->|assume role| AWS{AWS Cloud}:::aws
+    GH[GitHub Repo]
+    GA[GitHub Actions: OIDC + CI/CD]
+    GH --> GA
 
-    AWS --> S3[S3 raw/ zone<br/>Hive partitioned CSV]:::data
-    S3 -->|Glue Crawler| GC[Glue Data Catalog<br/>Athena queries]:::data
-    S3 -->|engineered features| FS[SageMaker Feature Store<br/>online + offline]:::data
+    GA --> AWS[AWS Cloud]
 
-    GC --> SP[SageMaker Pipeline]:::ml
+    AWS --> S3[S3 raw zone<br/>Hive partitioned]
+    S3 --> GC[Glue Catalog<br/>+ Athena]
+    S3 --> FS[SageMaker Feature Store<br/>online + offline]
+
+    GC --> SP[SageMaker Pipeline]
     FS --> SP
-    SP --> P1[Preprocess]:::ml
-    P1 --> P2[Train XGBoost]:::ml
-    P2 --> P3[Evaluate]:::ml
-    P3 --> P4{PR-AUC > 0.7?}:::condition
-    P4 -- yes --> MR[Model Registry<br/>PendingApproval → Approved]:::ml
-    MR --> EP[Serverless Endpoint]:::ml
+    SP --> P1[Preprocess]
+    P1 --> P2[Train XGBoost]
+    P2 --> P3[Evaluate]
+    P3 --> MR[Model Registry<br/>Pending → Approved]
+    MR --> EP[Serverless Endpoint]
 
-    Client([Client / curl / app]):::client -->|HTTPS + API key| AG[API Gateway]:::api
-    AG --> LP[Lambda Predict<br/>handles A/B routing]:::api
+    Client[Client app/curl] --> AG[API Gateway]
+    AG --> LP[Lambda Predict]
     LP --> EP
-    LP -->|S3 capture| DC[(Data Capture Bucket)]:::data
+    LP --> DC[S3 Data Capture]
 
-    DC --> DD[Drift Detector Lambda<br/>hourly via EventBridge]:::monitor
-    DD -->|publishes metric| CW[CloudWatch Alarm]:::monitor
-    CW --> SNS[SNS Topic]:::monitor
-    SNS -->|email subscription| Email([📧 Email Alert]):::client
-    SNS -->|invoke| RL[Retrain Lambda]:::monitor
-    RL -.triggers retrain.-> SP
+    DC --> DD[Drift Detector Lambda<br/>hourly EventBridge]
+    DD --> CW[CloudWatch Alarm]
+    CW --> SNS[SNS Topic]
+    SNS --> Email[Email Alert]
+    SNS --> RL[Retrain Lambda]
+    RL --> SP
 
-    classDef ci fill:#222,stroke:#999,color:#fff
-    classDef aws fill:#FF9900,stroke:#fff,color:#000
-    classDef data fill:#3B48CC,stroke:#fff,color:#fff
-    classDef ml fill:#01A88D,stroke:#fff,color:#fff
-    classDef api fill:#9D5025,stroke:#fff,color:#fff
-    classDef monitor fill:#C7131F,stroke:#fff,color:#fff
-    classDef condition fill:#666,stroke:#fff,color:#fff
-    classDef client fill:#444,stroke:#fff,color:#fff
+    style GH fill:#222,color:#fff
+    style GA fill:#222,color:#fff
+    style AWS fill:#FF9900,color:#000
+    style S3 fill:#3B48CC,color:#fff
+    style GC fill:#3B48CC,color:#fff
+    style FS fill:#3B48CC,color:#fff
+    style SP fill:#01A88D,color:#fff
+    style P1 fill:#01A88D,color:#fff
+    style P2 fill:#01A88D,color:#fff
+    style P3 fill:#01A88D,color:#fff
+    style MR fill:#01A88D,color:#fff
+    style EP fill:#01A88D,color:#fff
+    style Client fill:#444,color:#fff
+    style AG fill:#9D5025,color:#fff
+    style LP fill:#9D5025,color:#fff
+    style DC fill:#3B48CC,color:#fff
+    style DD fill:#C7131F,color:#fff
+    style CW fill:#C7131F,color:#fff
+    style SNS fill:#C7131F,color:#fff
+    style Email fill:#444,color:#fff
+    style RL fill:#C7131F,color:#fff
 ```
 
 ## Tech Stack
